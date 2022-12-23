@@ -7,7 +7,7 @@ class History(Base):
     """
     UserModel
     """
-    __tablename__ = 'history'
+    __tablename__ = 'pharaoh'
     id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
     date = Column(DateTime)
     shop = Column(String(100))
@@ -16,11 +16,12 @@ class History(Base):
     shipping_cost = Column(Integer)
     quantity = Column(Integer)
     asin = Column(String(20))
-    # amazon_link = Column(String(255))
-    # keepa_link = Column(String(255))
     unit_price = Column(Integer)
     rate = Column(Float)
     product_url = Column(String(255))
+    amazon_link = Column(String(255))
+    keepa_link = Column(String(255))
+    pricestar_url = Column(String(255))
     # bought_by = Column(String(20))
 
 

@@ -1,36 +1,49 @@
-import re
-from oauth2client.service_account import ServiceAccountCredentials
-import gspread
+from sqlalchemy import select, func
+from settings.setting import session
+from models.history import History
+from sqlalchemy import desc
 
-# product = '=HYPERLINK("https://item.rakuten.co.jp/hatasan01/tbp4903sp/?s-id=ph_pc_itemname","KTC（ケーティーシー）　1/2 インパクトレンチ用ホイールナットソケットセット3ピース（17,19,21mm）　★TBP4903")'
-# pattern = '[\w/:%#$&\?\(\)~\.=\+\-]+'
+ASIN = 'B07KCG1WMJ'
 
-# url = re.findall('https?://(?:[-\w.]|(?:%[\da-fA-F]{2}))+', product)
-# print(url)
-#
-# url = re.search('"([^"]*)"[^"]*"([^"]*)"', product)
-# print(url.group(0))
-# print(url.group(1))
-# print(url.group(2))
+all_data = session.query(
+    func.group_concat(History.product_name.distinct()).label('product_name'),
+    func.group_concat(History.product_url.distinct()).label('product_url'),
+    History.asin,
+    func.avg(History.price).label('price_avg'),
+    func.min(History.price).label('price_min'),
+    func.max(History.price).label('price_max'),
+    func.sum(History.quantity).label('quantity_count'),
+    func.count(History.asin).label('buy_count')). \
+    group_by(History.asin). \
+    order_by(func.sum(History.quantity).desc()).\
+    filter(History.asin == ASIN).\
+    all()
 
-scopes = ['https://www.googleapis.com/auth/spreadsheets.readonly',
-          'https://spreadsheets.google.com/feeds',
-          'https://www.googleapis.com/auth/drive']
-json_key_file = 'pelagic-region-134805-4a53d343e113.json'
-sheet_id = '1a10YNZ3knukv-PwW6beSWTMCyWhVY7Nci6danY1H1xQ'
+# print(type(all_data))
+# print(all_data[0])
+product_name = all_data[0][0]
+product_li = product_name.split(',')
+print('商品名は', product_li[0])
 
-credentials = ServiceAccountCredentials.from_json_keyfile_name(json_key_file, scopes)
-# gspread用に認証
-gc = gspread.authorize(credentials)
-# スプレッドシートのIDを指定してワークブックを選択
-workbook = gc.open_by_key(sheet_id)
+price_avg = all_data[0][3]
+print('平均価格は', price_avg)
 
-worksheet_list = workbook.worksheets()
-last_sheet = len(worksheet_list)-7
-products_worksheet_list = worksheet_list[2:len(worksheet_list)-7]
-print(products_worksheet_list)
+price_min = all_data[0][4]
+print('最低価格は', price_min)
 
-for sht in products_worksheet_list:
-    print(sht.title)
+buy_count = all_data[0][7]
+print('購入回数は', buy_count)
+
+product_url = all_data[0][1]
+url_li = product_url.split(',')
+print('URL一覧')
+for url in url_li:
+    print(url)
+# print(all_data)
+# print(all_data.product_url)
+# print(all_data.asin_count)
+# print(all_data.quantity_count)
+
+
 
 

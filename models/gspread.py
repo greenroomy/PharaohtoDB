@@ -6,7 +6,8 @@ from gspread_dataframe import get_as_dataframe
 from settings.setting import ENGINE
 
 COLUMNS = ['date', 'shop', 'product_name', 'price', 'shipping_cost',
-           'quantity', 'asin', 'unit_price', 'rate', 'product_url']
+           'quantity', 'asin', 'unit_price', 'rate', 'product_url',
+           'amazon_link', 'keepa_link', 'pricestar_url']
 
 
 class Gspread(object):
@@ -26,16 +27,14 @@ class Gspread(object):
         # 全てのworksheetを取得
         worksheet_list = workbook.worksheets()
         # "設定"等関連しないシートのみにする
-        # products_worksheet_list = worksheet_list[2:len(worksheet_list) - 7]
-        products_worksheet_list = worksheet_list[11:len(worksheet_list) - 20]
+        products_worksheet_list = worksheet_list[2:len(worksheet_list) - 7]
+        # products_worksheet_list = worksheet_list[11:len(worksheet_list) - 20]
         print(products_worksheet_list)
         for sht in products_worksheet_list:
             print(sht.title)
             sheet = workbook.worksheet(sht.title)
             # 商品の列(関数の利用あり)のみ取り出し
             df_product = get_as_dataframe(sheet, evaluate_formulas=False, usecols=[4], header=13, encoding='utf-8')
-            # URL列を追加してデフォルト値Noneを設定
-            df_product['URL'] = None
             # 商品名の列が空の行を削除
             df_product.dropna(subset=['商品名'], inplace=True)
             # Productが=HYPERLINKで始まっていれば商品名とURLを個別に取り出す
@@ -43,11 +42,15 @@ class Gspread(object):
             # 商品名以外の列(関数利用なし)を取り出し
             df_all = get_as_dataframe(sheet, evaluate_formulas=True,
                                       usecols=[2, 3, 4, 5, 6, 7, 12, 19, 20],
-                                      header=13, ncoding='utf-8')
-            # 日付の列が空の行を削除
-            df_all.dropna(subset=['日付'], inplace=True)
+                                      header=13, encoding='utf-8')
+            # @購入単価の列が空の行を削除
+            df_all.dropna(subset=['@購入単価'], inplace=True)
             # 商品名、商品URLのテーブルとそれ以外のテーブルを結合
             df_merged = pd.concat([df_all, df_url_name], axis=1)
+            # 足りない情報を追加
+            # Amazon URL
+            df_urls = self.make_url(df_merged)
+
             df_merged.columns = COLUMNS
             df_merged.to_sql(
                 name='pharaoh',
@@ -59,6 +62,8 @@ class Gspread(object):
             )
 
     def get_url_name(self, data):
+        # URL列を追加してデフォルト値Noneを設定
+        data['URL'] = None
         for row in data.itertuples():
             product = row[1]
             if product[:1] == '=':
@@ -74,6 +79,32 @@ class Gspread(object):
         # 元の列の"商品名"の列と重複するので削除
         data.drop(columns=['商品名'], inplace=True)
         return data
+
+    def make_url(self, df):
+        # amazon_linkとkeepa_link列を追加してデフォルト値Noneを設定
+        df['amazon_link'] = None
+        df['keepa_link'] = None
+        df['pricestar_url'] = None
+        amazon_ep = 'https://www.amazon.co.jp/dp/'
+        keepa_ep = 'https://keepa.com/#!search/5-'
+        pricestar_ep = 'https://jp2.pricetar.com/seller/orders/orderlist?searchMethod=keyword&inventoryStock%5Bm%5D=&keyword='
+        for row in df.itertuples():
+            if isinstance(row[7], float):
+                df.iloc[row[0], 10] = None
+                df.iloc[row[0], 11] = None
+            # elif isinstance(row[7], str) and re.search('\(|（', row[7]):
+            else:
+                asin = row[7][0:10]
+                amazon_url = amazon_ep + asin
+                keepa_url = keepa_ep + asin
+                pricestar_url = pricestar_ep + asin
+                df.iloc[row[0], 10] = amazon_url
+                df.iloc[row[0], 11] = keepa_url
+                df.iloc[row[0], 12] = pricestar_url
+                df.iloc[row[0], 6] = asin
+        return df
+
+
 
 
 
