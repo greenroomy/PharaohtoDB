@@ -8,7 +8,8 @@ class History(Base):
     UserModel
     """
     __tablename__ = 'pharaoh'
-    id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    # id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+    id = Column(Integer, primary_key=True, autoincrement=True, nullable=False)
     date = Column(DateTime)
     shop = Column(String(100))
     product_name = Column(String(255))
@@ -22,7 +23,7 @@ class History(Base):
     amazon_link = Column(String(255))
     keepa_link = Column(String(255))
     pricestar_url = Column(String(255))
-    # bought_by = Column(String(20))
+    bought_by = Column(String(20))
 
 
 def main(args):

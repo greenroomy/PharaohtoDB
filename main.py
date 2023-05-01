@@ -1,7 +1,4 @@
 from models.gspread import Gspread
-from models.history import *
-from settings.setting import session
-from settings.setting import ENGINE
 
 
 def main():

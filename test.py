@@ -1,7 +1,6 @@
 from sqlalchemy import select, func
 from settings.setting import session
 from models.history import History
-from sqlalchemy import desc
 
 ASIN = 'B07KCG1WMJ'
 

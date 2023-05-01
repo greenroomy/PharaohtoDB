@@ -1,11 +1,14 @@
 from sqlalchemy import *
 from sqlalchemy.orm import *
 from sqlalchemy.ext.declarative import declarative_base
+import pymysql
+pymysql.install_as_MySQLdb()
 
 dialect = "mysql"
 driver = "mysqldb"
 username = "root"
 password = "jpt01130"
+# host = "192.168.68.70"
 host = "localhost"
 port = "3306"
 database = "pharaoh"
